@@ -14,15 +14,15 @@ using HTTP
 
     @testset "filename from remote path" begin
 
-        file = HTTP.download("https://httpbingo.julialang.org/html")
+        file, r = HTTP.download("https://httpbingo.julialang.org/html")
         @test basename(file) == "html"
-        file = HTTP.download("https://httpbingo.julialang.org/redirect/2")
+        file, r = HTTP.download("https://httpbingo.julialang.org/redirect/2")
         @test basename(file) == "2"
         # HTTP.jl#696
-        file = HTTP.download("https://httpbingo.julialang.org/html?a=b")
+        file, r = HTTP.download("https://httpbingo.julialang.org/html?a=b")
         @test basename(file) == "html"
         # HTTP.jl#896
-        file = HTTP.download("https://www.cryst.ehu.es/")
+        file, r = HTTP.download("https://www.cryst.ehu.es/")
         @test isfile(file) # just ensure it downloads and doesn't stack overflow
     end
 
@@ -59,7 +59,7 @@ using HTTP
 
     @testset "Provided Filename" begin
         provided_filename = tempname()
-        returned_filename = HTTP.download(
+        returned_filename, response = HTTP.download(
             "http://test.greenbytes.de/tech/tc2231/inlwithasciifilenamepdf.asis",
             provided_filename
         )
@@ -69,18 +69,23 @@ using HTTP
 
     @testset "Content-Encoding" begin
         # Add gz extension if we are determining the filename
-        gzip_content_encoding_fn = HTTP.download("https://httpbin.org/gzip")
+        gzip_content_encoding_fn, r = HTTP.download("https://httpbin.org/gzip")
         @test isfile(gzip_content_encoding_fn)
         @test last(splitext(gzip_content_encoding_fn)) == ".gz"
 
         # But not if the local name is fully given. HTTP#573
         mktempdir() do dir
             name = joinpath(dir, "foo")
-            downloaded_name = HTTP.download(
+            downloaded_name, r = HTTP.download(
                 "https://pkg.julialang.org/registry/23338594-aafe-5451-b93e-139f81909106/7858451b7a520344eb60354f69809d30a44e7dae",
                 name,
             )
             @test name == downloaded_name
         end
+    end
+
+    @testset "Verify Response" begin
+        file, r = HTTP.download("https://httpbingo.julialang.org/html")
+        @test r.reponse == 200
     end
 end

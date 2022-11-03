@@ -67,13 +67,13 @@ function determine_file(path, resp, hdrs)
                         basename(tempname())  # fallback, basically a random string
                     )
 
-        
+
         # get the extension, if we are going to save it in encoded form.
         # unlike a web-browser we don't automatically decompress
         if header(resp, "Content-Encoding") == "gzip"
             filename *= ".gz"
         end
-        
+
         safer_joinpath(path, filename)
     else
         # We have been given a full filepath
@@ -84,7 +84,7 @@ end
 """
     download(url, [local_path], [headers]; update_period=1, kw...)
 
-Similar to `Base.download` this downloads a file, returning the filename.
+Similar to `Base.download` this downloads a file, and returns the filename and HTTP response.
 If the `local_path`:
  - is not provided, then it is saved in a temporary directory
  - if part to a directory is provided then it is saved into that directory
@@ -108,7 +108,7 @@ function download(url::AbstractString, local_path=nothing, headers=Header[]; upd
     @debugv 1 "downloading $url"
     local file
     hdrs = String[]
-    HTTP.open("GET", url, headers; kw...) do stream
+    r = HTTP.open("GET", url, headers; kw...) do stream
         resp = startread(stream)
         # Store intermediate header from redirects to use for filename detection
         content_disp = header(resp, "Content-Disposition")
@@ -156,5 +156,5 @@ function download(url::AbstractString, local_path=nothing, headers=Header[]; upd
             report_callback()
         end
     end
-    file
+    file, r
 end
